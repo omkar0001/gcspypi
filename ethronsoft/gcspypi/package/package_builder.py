@@ -9,10 +9,7 @@ import tempfile
 import zipfile
 
 
-
-
 class PackageBuilder(object):
-
     def __init__(self, raw_package):
         try:
             cwd = os.getcwd()
@@ -71,17 +68,30 @@ class PackageBuilder(object):
                 self.metadata = {}
 
             def __call__(self, target):
-                m = json.loads(target.read())
-                self.metadata["name"] = m["name"]
-                self.metadata["version"] = m["version"]
-                self.metadata["requirements"] = set([])
-                for reqs in m["run_requires"]:
-                    self.metadata["requirements"].update(reqs["requires"])
+                def __parse_package_name(package_name):
+                    return package_name.replace(" ", "").replace("(", "").replace(")", "")
+
+                m = {}
+                requirements_key_name = "Requires-Dist"
+                m[requirements_key_name.upper()] = []
+                for line in target.readlines():
+                    if ":" not in line:
+                        break
+                    k, v = line.replace(":", '@@@', 1).split('@@@')
+                    if k == requirements_key_name:
+                        m[k.upper().strip()].append(v.strip())
+                    else:
+                        m[k.upper().strip()] = v.strip()
+
+                print(m)
+                self.metadata["name"] = m["name".upper()]
+                self.metadata["version"] = m["version".upper()]
+                self.metadata["requirements"] = [__parse_package_name(r) for r in m[requirements_key_name.upper()]]
 
         cmd = InfoCmd()
-        self.__seek_and_apply(zpfile, "metadata.json", cmd)
+        self.__seek_and_apply(zpfile, "METADATA", cmd)
         if not cmd.metadata:
-            raise InvalidState("Could not find metadata.json")
+            raise InvalidState("Could not find MATADATA")
         return cmd.metadata
 
     def __read_requirements(self, zpfile):

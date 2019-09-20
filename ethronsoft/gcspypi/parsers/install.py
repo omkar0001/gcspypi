@@ -16,6 +16,7 @@ def handle_(config, data):
                 c.info("installing {}".format(syntax))
                 pkg_mgr.install(syntax, data["type"], data["no_user"])
 
+
 class InstallParser(object):
 
     def __init__(self, subparsers):

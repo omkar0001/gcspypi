@@ -15,14 +15,16 @@ import zipfile
 from glob import glob
 
 
-
 class PackageInstaller(object): # pragma: no cover
 
     def install(self, resource, flags=[]):
-        subprocess.check_call(["python", "-m", "pip","install", resource] + flags)
+        python_interpreter = sys.executable
+        subprocess.check_call([python_interpreter, "-m", "pip","install", resource] + flags)
 
     def uninstall(self, pkg):
-        subprocess.check_call(["python", "-m", "pip","uninstall", pkg.full_name.replace(":", "==")])
+        python_interpreter = sys.executable
+        subprocess.check_call([python_interpreter, "-m", "pip","uninstall", pkg.full_name.replace(":", "==")])
+
 
 class PackageManager(object):
 
@@ -139,10 +141,12 @@ class PackageManager(object):
                 root_dir = os.path.join(tmp, pkg.full_name.replace(":", "_"))
                 os.mkdir(root_dir)
                 root_pkg = self.download(pkg, root_dir, preferred_type)
+
                 #Note: if we got here is because pkg was found in the repository
                 #so the condition below should be redundant
                 # if not root_pkg:
                     # return False
+
                 if self.__install_deps:
                     # let's separate all the internal requirements from the public ones.
                     # let's install the internal requirements ourselves and delegate the public ones to pip install.
@@ -173,6 +177,7 @@ class PackageManager(object):
                     pub_flags = []
                     if not no_user: pub_flags.append("--user")
                     self.__public_install(public_reqs, pub_flags)
+
                     #let's continue with our private requirements
                     #Because all dependendencies (public or internal)
                     #that one of these packages may have is already either
